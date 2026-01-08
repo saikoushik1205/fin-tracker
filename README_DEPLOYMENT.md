@@ -14,12 +14,14 @@ A comprehensive full-stack personal finance tracking application built with Angu
 ## 🛠️ Tech Stack
 
 ### Frontend
+
 - Angular 17+
 - TypeScript
 - RxJS
 - Angular Router
 
 ### Backend
+
 - Node.js
 - Express.js
 - MongoDB with Mongoose
@@ -76,6 +78,7 @@ npm start
 ```
 
 The application will be available at:
+
 - Frontend: http://localhost:4200
 - Backend API: http://localhost:3000/api
 
@@ -141,22 +144,26 @@ Password: Test123!
 ## 📝 API Documentation
 
 ### Authentication
+
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 
 ### Persons
+
 - `GET /api/persons` - Get all persons
 - `POST /api/persons` - Create new person
 - `PUT /api/persons/:id` - Update person
 - `DELETE /api/persons/:id` - Delete person
 
 ### Transactions
+
 - `GET /api/transactions` - Get all transactions
 - `POST /api/transactions` - Create transaction
 - `PUT /api/transactions/:id` - Update transaction
 - `DELETE /api/transactions/:id` - Delete transaction
 
 ### Dashboard
+
 - `GET /api/dashboard/stats` - Get dashboard statistics
 
 ## 🤝 Contributing
@@ -174,6 +181,7 @@ This project is licensed under the MIT License.
 ## 👤 Author
 
 **Sai Koushik**
+
 - GitHub: [@saikoushik1205](https://github.com/saikoushik1205)
 
 ## 🙏 Acknowledgments
@@ -185,6 +193,7 @@ This project is licensed under the MIT License.
 ---
 
 For detailed setup and deployment instructions, see:
+
 - [SETUP_GUIDE.md](./SETUP_GUIDE.md)
 - [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)
 - [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
