@@ -1,42 +1,19 @@
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config();
 
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
-
-const {
-  limiter,
-  authLimiter,
-  sanitizeData,
-} = require("./src/middleware/security");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 
-/* =========================
-   SECURITY MIDDLEWARE
-========================= */
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-      },
-    },
-    crossOriginEmbedderPolicy: false,
-  })
-);
-
+// Security middleware
+app.use(helmet());
 app.use(compression());
-app.use(sanitizeData);
 
-/* =========================
-   CORS CONFIGURATION
-========================= */
+// CORS configuration
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:4200",
   "http://localhost:4200",
@@ -57,6 +34,20 @@ app.use(
     credentials: true,
   })
 );
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
+app.use("/api/", limiter);
+
+// Auth rate limiting
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  skipSuccessfulRequests: true,
+});
 
 /* =========================
    RATE LIMITING
