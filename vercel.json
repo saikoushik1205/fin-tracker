@@ -1,38 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/fintrack-frontend/browser"
-      }
-    },
-    {
-      "src": "backend/server.js",
-      "use": "@vercel/node"
-    }
-  ],
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist/fintrack-frontend/browser",
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "backend/server.js"
-    },
-    {
-      "src": "/assets/(.*)",
-      "dest": "/frontend/dist/fintrack-frontend/browser/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|json))",
-      "dest": "/frontend/dist/fintrack-frontend/browser/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/frontend/dist/fintrack-frontend/browser/index.html"
+      "dest": "/index.html"
     }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "outputDirectory": "frontend/dist/fintrack-frontend/browser"
+  ]
 }
