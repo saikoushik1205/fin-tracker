@@ -1,18 +1,42 @@
-require("dotenv").config();
+require("dotenv").config({ path: "./.env" });
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
-const rateLimit = require("express-rate-limit");
+
+const {
+  limiter,
+  authLimiter,
+  sanitizeData,
+} = require("./src/middleware/security");
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
-app.use(compression());
+/* =========================
+   SECURITY MIDDLEWARE
+========================= */
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  })
+);
 
-// CORS configuration
+app.use(compression());
+app.use(sanitizeData);
+
+/* =========================
+   CORS CONFIGURATION
+========================= */
 const allowedOrigins = [
   process.env.FRONTEND_URL || "http://localhost:4200",
   "http://localhost:4200",
@@ -22,13 +46,9 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      if (
-        allowedOrigins.indexOf(origin) !== -1 ||
-        origin.includes(".vercel.app")
-      ) {
+      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -38,43 +58,60 @@ app.use(
   })
 );
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-});
+/* =========================
+   RATE LIMITING
+========================= */
 app.use("/api/", limiter);
 
-// Body parser middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+/* =========================
+   BODY PARSERS
+========================= */
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// MongoDB connection
-mongoose
-  .connect(process.env.MONGODB_URI)
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch((err) => {
-    console.error("❌ MongoDB connection error:", err);
+/* =========================
+   MONGODB CONNECTION
+========================= */
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+    console.log("✅ MongoDB connected successfully");
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
     process.exit(1);
-  });
+  }
+};
 
-// API Routes
-app.use("/api/auth", require("./src/routes/auth"));
+connectDB();
+
+/* =========================
+   API ROUTES
+========================= */
+app.use("/api/auth", authLimiter, require("./src/routes/auth"));
 app.use("/api/persons", require("./src/routes/persons"));
 app.use("/api/transactions", require("./src/routes/transactions"));
 app.use("/api/cash-bank", require("./src/routes/cashBank"));
 app.use("/api/dashboard", require("./src/routes/dashboard"));
 
-// Health check
+/* =========================
+   HEALTH CHECK
+========================= */
 app.get("/api/health", (req, res) => {
   res.json({
     success: true,
     message: "FinTrack API is running",
+    environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
+    database:
+      mongoose.connection.readyState === 1 ? "connected" : "disconnected",
   });
 });
 
-// 404 handler
+/* =========================
+   404 HANDLER
+========================= */
 app.use("/api/*", (req, res) => {
   res.status(404).json({
     success: false,
@@ -82,7 +119,9 @@ app.use("/api/*", (req, res) => {
   });
 });
 
-// Global error handler
+/* =========================
+   GLOBAL ERROR HANDLER
+========================= */
 app.use((err, req, res, next) => {
   console.error("Server Error:", err);
   res.status(err.status || 500).json({
@@ -92,8 +131,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start server
+/* =========================
+   START SERVER
+========================= */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 API available at http://localhost:${PORT}/api`);
